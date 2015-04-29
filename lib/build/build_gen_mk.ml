@@ -33,7 +33,7 @@ BUILD_FLAGS ?= -use-ocamlfind -cflags -bin-annot -lflags -g
 # =============================================================================
 # Useful Vars
 # =============================================================================
-SEMVER := $(shell vrt prj semver)
+SEMVER := $(shell trv build semver)
 BUILD := ocamlbuild -j $(PARALLEL_JOBS) -build-dir $(BUILD_DIR) $(BUILD_FLAGS)
 
 MOD_DEPS=$(foreach DEP,$(DEPS), --depends $(DEP))
@@ -76,10 +76,10 @@ build:
 \t$(BUILD) $(NAME).cma $(NAME).cmx $(NAME).cmxa $(NAME).a $(NAME).cmxs $(EXTRA_TARGETS)
 
 metadata:
-\tvrt prj make-meta \
+\ttrv build make-meta \
  --name $(NAME) \
  --target-dir $(LIB_DIR) \
- --root-file vrt.mk \
+ --root-file trv.mk \
  --semver $(SEMVER) \
  --description-file '$(DESC_FILE)' \
  $(MOD_DEPS)
@@ -87,7 +87,7 @@ metadata:
 # This is only used to help during local opam package
 # development
 opam: build
-\tvrt opam make-opam \
+\ttrv opam make-opam \
  --target-dir $(CURDIR) \
  --name $(NAME) \
  --semver $(SEMVER) \
@@ -115,7 +115,7 @@ install-local-opam: opam pin-repo
  opam install $(NAME)
 
 prepare: build
-\tvrt opam prepare \
+\ttrv opam prepare \
  --organization $(ORGANIZATION) \
  --target-dir $(BUILD_DIR) \
  --homepage $(HOMEPAGE) \
@@ -150,7 +150,7 @@ remove:
 clean:
 \trm -rf $(CLEAN_TARGETS)
 \trm -rf $(BUILD_DIR)
-\trm -rf vrt.mk
+\trm -rf trv.mk
 
 
 # =============================================================================
@@ -186,7 +186,7 @@ utop: $(UTOP_INIT)
 \tutop -I $(LIB_DIR) -init $(UTOP_INIT)
 
 .merlin: build
-\tvrt prj make-dot-merlin \\
+\ttrv build make-dot-merlin \\
 \t\t--build-dir $(BUILD_DIR) \\
 \t\t--lib \"$(DEPS)\" \\
 \t\t--source-dir $(SOURCE_DIR)
@@ -246,7 +246,7 @@ let mk ~log_level ~plugins =
   let logger = Log_common.create log_level in
   Build_project_root.find ~dominating:"Makefile" ()
   >>=? fun project_root ->
-  write logger project_root "vrt.mk" makefile
+  write logger project_root "trv.mk" makefile
   >>=? fun _ ->
   if List.mem plugins "atdgen" then
     write logger project_root "myocamlbuild.ml" myocamlbuild
@@ -267,7 +267,7 @@ let name = "gen-mk"
 
 let command =
   Command.async_basic
-    ~summary:"Generates `vrt.mk` file in the root of the project directory"
+    ~summary:"Generates `trv.mk` file in the root of the project directory"
     spec
     (fun log_level plugins () ->
        Cmd_common.result_guard (fun _ -> mk ~log_level ~plugins))
