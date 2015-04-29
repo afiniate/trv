@@ -38,13 +38,7 @@ let write_meta target_dir name semver desc depends =
                  "archive(native) = \"" ^ name ^ ".cmxa\"\n" ^
                  "archive(native, plugin) = \"" ^ name ^ ".cmxs\"" ^
                  "exists_if = \""^ name ^ ".cma\"\n" in
-  let path = Filename.implode [target_dir; "META"] in
-  try
-    Writer.save path ~contents
-    >>| fun _ ->
-    Ok ()
-  with exn ->
-    return @@ Error exn
+  Flib_file.dump ~dir:target_dir ~name:"META" ~contents
 
 let get_semver
   : String.t Option.t -> (String.t, Exn.t) Deferred.Result.t =

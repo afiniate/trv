@@ -1,7 +1,7 @@
 true: syntax(camlp4o)
 
 <flib>: include
-<opam>: include
+<olib>: include
 <build>: include
 <log>: include
 <cmd>: include

@@ -87,7 +87,7 @@ metadata:
 # This is only used to help during local opam package
 # development
 opam: build
-\ttrv opam make-opam \
+\ttrv olib make-opam \
  --target-dir $(CURDIR) \
  --name $(NAME) \
  --semver $(SEMVER) \
@@ -115,7 +115,7 @@ install-local-opam: opam pin-repo
  opam install $(NAME)
 
 prepare: build
-\ttrv opam prepare \
+\ttrv olib prepare \
  --organization $(ORGANIZATION) \
  --target-dir $(BUILD_DIR) \
  --homepage $(HOMEPAGE) \

@@ -20,7 +20,7 @@ let write_opam
   fun ~target_dir ~license ~maintainer
     ~author ~homepage ~bug_reports ~dev_repo ~build_cmds ~install_cmds
     ~remove_cmds ~depends ~build_depends ->
-    Opam_make_opam.write_opam ~target_dir ~license ~maintainer
+    Olib_make_opam.write_opam ~target_dir ~license ~maintainer
     ~author ~homepage ~bug_reports ~dev_repo ~build_cmds ~install_cmds
     ~remove_cmds ~depends ~build_depends ()
 
