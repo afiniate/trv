@@ -5,7 +5,7 @@ let name = "opam"
 
 let command =
   Command.group ~summary:"opam specific tooling for the system"
-    [Olib_make_opam.desc;
-     Olib_prepare.desc]
+    [Opam_make_opam.desc;
+     Opam_prepare.desc]
 
 let desc = (name, command)
