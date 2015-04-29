@@ -9,7 +9,7 @@ BUG_REPORTS:="https://github.com/afiniate/trv/issues"
 
 BUILD_DEPS:=core async async_unix async_extra sexplib.syntax sexplib \
 	async_shell core_extended async_find cohttp.async uri
-DEPS:=
+DEPS:=$(BUILD_DEPS)
 
 DESC_FILE := $(CURDIR)/descr
 
