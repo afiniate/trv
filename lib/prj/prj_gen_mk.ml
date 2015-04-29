@@ -232,9 +232,8 @@ dispatch begin function
  | _ -> ()
 end"
 
-let write logger root filename contents =
+let write root filename contents =
   let path = Filename.implode [root; filename] in
-  Log.info logger "Writing makefile to %s" path;
   try
     Writer.save path ~contents
     >>| fun _ ->
@@ -242,16 +241,14 @@ let write logger root filename contents =
   with exn ->
     return @@ Result.Error Gen_mk_write_error
 
-let mk ~log_level ~plugins =
-  let logger = Vrt_common.Logging.create log_level in
+let mk ~plugins =
   Prj_project_root.find ~dominating:"Makefile" ()
   >>=? fun project_root ->
-  write logger project_root "vrt.mk" makefile
+  write project_root "vrt.mk" makefile
   >>=? fun _ ->
   if List.mem plugins "atdgen" then
-    write logger project_root "myocamlbuild.ml" myocamlbuild
+    write project_root "myocamlbuild.ml" myocamlbuild
     >>= fun result ->
-    ignore @@ Vrt_common.Logging.flush logger;
     return result
   else
     return @@ Ok ()
@@ -259,7 +256,6 @@ let mk ~log_level ~plugins =
 let spec =
   let open Command.Spec in
   empty
-  +> Vrt_common.Logging.flag
   +> flag ~aliases:["-p"] "--plugin" (listed string)
     ~doc:"plugin A myocamlbuild plugin (currently only atdgen is supported)."
 
@@ -269,9 +265,7 @@ let command =
   Command.async_basic
     ~summary:"Generates `vrt.mk` file in the root of the project directory"
     spec
-    (fun log_level plugins () ->
-       Vrt_common.Cmd.result_guard (fun _ -> mk ~log_level ~plugins))
-
-
+    (fun plugins () ->
+       Prj_common.result_guard (fun _ -> mk ~plugins))
 
 let desc = (name, command)

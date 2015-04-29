@@ -38,7 +38,13 @@ let write_meta target_dir name semver desc depends =
                  "archive(native) = \"" ^ name ^ ".cmxa\"\n" ^
                  "archive(native, plugin) = \"" ^ name ^ ".cmxs\"" ^
                  "exists_if = \""^ name ^ ".cma\"\n" in
-  Afin.Files.dump ~dir:target_dir ~name:"META" ~contents
+  let path = Filename.implode [target_dir; "META"] in
+  try
+    Writer.save path ~contents
+    >>| fun _ ->
+    Ok ()
+  with exn ->
+    return @@ Error exn
 
 let get_semver
   : String.t Option.t -> (String.t, Exn.t) Deferred.Result.t =
@@ -51,8 +57,8 @@ let get_semver
 let do_make_meta ~name ~description_file ~target_dir ~depends ~semver ~root_file =
   Prj_project_root.find ~dominating:root_file ()
   >>=? fun project_root ->
-  Vrt_common.Dirs.change_to project_root
-  >>=? fun () ->
+  Unix.chdir project_root
+  >>= fun () ->
   get_semver semver
   >>=? fun realized_semver ->
   Reader.file_contents description_file
@@ -81,7 +87,7 @@ let command =
   Command.async_basic ~summary:"Generates a valid `META` file"
     spec
     (fun name description_file target_dir depends semver root_file () ->
-       Vrt_common.Cmd.result_guard
+       Prj_common.result_guard
          (fun () -> do_make_meta ~name ~description_file ~target_dir ~depends
              ~semver ~root_file))
 
