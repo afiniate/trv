@@ -77,7 +77,7 @@ let write_opam
                    "\n" ^
                    "depends: [" ^ ((format_build_dependencies build_depends) ^
                                    (format_dependencies depends)) ^ "]\n" in
-    Prj_common.dump ~dir:target_dir ~name:"opam" ~contents
+    Flib_file.dump ~dir:target_dir ~name:"opam" ~contents
 
 let get_target_dir
   : target_dir: String.t Option.t -> root_file:String.t ->
@@ -87,7 +87,7 @@ let get_target_dir
     | Some dir ->
       return @@ Ok dir
     | None ->
-      Prj_project_root.find ~dominating:root_file ()
+      Build_project_root.find ~dominating:root_file ()
 
 let do_make_opam
   : target_dir:String.t Option.t
@@ -104,7 +104,7 @@ let do_make_opam
     ~depends ~build_depends ~root_file ->
   get_target_dir ~target_dir ~root_file
   >>=? fun opam_root ->
-  Prj_dirs.change_to opam_root
+  Flib_dir.change_to opam_root
   >>=? fun _ ->
   write_opam ~target_dir:opam_root ?name ?semver ~license ~maintainer ~author
       ~homepage ~bug_reports ~dev_repo ~build_cmds ~install_cmds ~remove_cmds
@@ -154,7 +154,7 @@ let command: Command.t =
     (fun target_dir name semver license lib_dir maintainer author
       homepage bug_reports dev_repo build_cmds install_cmds remove_cmds depends
       build_depends root_file () ->
-      Prj_common.result_guard
+      Cmd_common.result_guard
         (fun _ -> do_make_opam ~target_dir ~name ~semver ~license ~lib_dir
             ~maintainer ~author ~homepage ~bug_reports ~dev_repo ~build_cmds
             ~install_cmds ~remove_cmds ~depends ~build_depends ~root_file))

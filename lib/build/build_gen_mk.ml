@@ -242,7 +242,7 @@ let write root filename contents =
     return @@ Result.Error Gen_mk_write_error
 
 let mk ~plugins =
-  Prj_project_root.find ~dominating:"Makefile" ()
+  Build_project_root.find ~dominating:"Makefile" ()
   >>=? fun project_root ->
   write project_root "vrt.mk" makefile
   >>=? fun _ ->
@@ -266,6 +266,6 @@ let command =
     ~summary:"Generates `vrt.mk` file in the root of the project directory"
     spec
     (fun plugins () ->
-       Prj_common.result_guard (fun _ -> mk ~plugins))
+       Cmd_common.result_guard (fun _ -> mk ~plugins))
 
 let desc = (name, command)

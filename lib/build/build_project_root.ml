@@ -10,7 +10,7 @@ exception Project_root_error of errors with sexp
 let find ?(dominating="Makefile") () =
   Sys.getcwd ()
   >>= fun base_dir ->
-  Prj_common.search_dominating_file ~base_dir ~dominating ()
+  Flib_file.search_dominating_file ~base_dir ~dominating ()
   >>| function
   | Some path ->
     Ok (Filename.normalize @@ Filename.make_absolute path)

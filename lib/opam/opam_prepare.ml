@@ -29,7 +29,7 @@ let write_description
   fun ~opam_dir ~description_file ->
     Reader.file_contents description_file
     >>= fun body ->
-    Prj_common.dump ~dir:opam_dir ~name:"descr" ~contents:body
+    Flib_file.dump ~dir:opam_dir ~name:"descr" ~contents:body
 
 let make_url
   : org:String.t -> name:String.t -> semver:String.t -> Uri.t =
@@ -50,7 +50,7 @@ and get_uri
   : logger:Log.t -> uri:Uri.t -> (String.t, Exn.t) Deferred.Result.t =
   fun ~logger ~uri ->
     ignore @@ Log.info logger "Retrieving tarbal from %s";
-    ignore @@ Prj_common.flush logger;
+    ignore @@ Log_common.flush logger;
     Cohttp_async.Client.get uri
     >>= function
     | ({Cohttp.Response.status = `OK}, body) ->
@@ -77,7 +77,7 @@ let write_url
     >>=? fun body ->
     let md5 = Digest.string body
               |> Digest.to_hex in
-    Prj_common.dump ~dir:target_dir ~name:"url" ~contents:(format_uri ~uri ~md5)
+    Flib_file.dump ~dir:target_dir ~name:"url" ~contents:(format_uri ~uri ~md5)
 
 let do_make_opam_description
   : log_level:Log.Level.t -> org:String.t -> name:String.t
@@ -93,11 +93,11 @@ let do_make_opam_description
     ~lib_dir ~maintainer ~author ~homepage ~bug_reports
     ~dev_repo ~build_cmds ~install_cmds ~remove_cmds ~depends
     ~build_depends ->
-    let logger = Prj_common.create log_level in
-    Prj_dirs.change_to target_dir
+    let logger = Log_common.create log_level in
+    Flib_dir.change_to target_dir
     >>=? fun _ ->
     ignore @@ Log.info logger "Retrieving semver for project";
-    Prj_semver.get_semver ()
+    Build_semver.get_semver ()
     >>=? fun semver ->
     ignore @@ Log.info logger "semver is %s" semver;
     let opam_dir = create_directory_name name semver in
@@ -116,13 +116,13 @@ let do_make_opam_description
     ignore @@ Log.info logger "Validation url and writing url file";
     let res = write_url ~logger ~target_dir:opam_dir ~org ~name ~semver in
     ignore @@ Log.info logger "Write complete to %s" opam_dir;
-    ignore @@ Prj_common.flush logger;
+    ignore @@ Log_common.flush logger;
     res
 
 let spec =
   let open Command.Spec in
   empty
-  +> Prj_common.flag
+  +> Log_common.flag
   +> flag ~aliases:["-t"] "--target-dir" (required string)
     ~doc:"target-dir The directory in which to generate the opam file"
   +> flag ~aliases:["-o"] "--organization" (required string)
@@ -164,7 +164,7 @@ let command: Command.t =
     (fun log_level target_dir org name description_file license lib_dir
       maintainer author homepage bug_reports dev_repo build_cmds install_cmds
       remove_cmds depends build_depends () ->
-      Prj_common.result_guard
+      Cmd_common.result_guard
         (fun _ -> do_make_opam_description ~log_level ~target_dir ~org ~name
             ~description_file ~license ~lib_dir ~maintainer ~author ~homepage ~bug_reports
             ~dev_repo ~build_cmds ~install_cmds ~remove_cmds ~depends

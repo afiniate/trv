@@ -52,10 +52,10 @@ let get_semver
   | Some semver ->
     return @@ Ok semver
   | None ->
-    Prj_semver.get_semver ()
+    Build_semver.get_semver ()
 
 let do_make_meta ~name ~description_file ~target_dir ~depends ~semver ~root_file =
-  Prj_project_root.find ~dominating:root_file ()
+  Build_project_root.find ~dominating:root_file ()
   >>=? fun project_root ->
   Unix.chdir project_root
   >>= fun () ->
@@ -87,7 +87,7 @@ let command =
   Command.async_basic ~summary:"Generates a valid `META` file"
     spec
     (fun name description_file target_dir depends semver root_file () ->
-       Prj_common.result_guard
+       Cmd_common.result_guard
          (fun () -> do_make_meta ~name ~description_file ~target_dir ~depends
              ~semver ~root_file))
 
