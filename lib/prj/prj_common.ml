@@ -64,3 +64,38 @@ let cmd_simply_print_response ~name ~desc ~exn format =
       Command.Spec.empty
       (cmd_monitor ~exn format) in
   (name, command)
+
+let dump
+  : dir:String.t -> name:String.t -> contents:String.t
+  -> (Unit.t, Exn.t) Deferred.Result.t =
+  fun ~dir ~name ~contents ->
+    let path = Filename.implode [dir; name] in
+    try
+      Writer.save path ~contents
+      >>| fun _ ->
+      Ok ()
+    with exn ->
+      return @@ Error exn
+
+let log_level =
+  Command.Spec.Arg_type.create
+    (function
+      | "v" -> `Error
+      | "vv" -> `Info
+      | "vvv" -> `Debug
+      | "error" -> `Error
+      | "info" -> `Info
+      | "debug" -> `Debug
+      | _ -> `Debug)
+
+let flag =
+  Command.Spec.(flag ~aliases:["-l"] "--log-level" (optional_with_default `Info log_level)
+                  ~doc:"log-level The log level to set")
+
+let create log_level =
+  Log.create log_level [Log.Output.stdout ()]
+
+let flush logger =
+  Log.flushed logger
+  >>| fun _ ->
+  Ok ()

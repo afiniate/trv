@@ -37,3 +37,21 @@ val guard: (Unit.t -> 'a Deferred.t) -> Unit.t Deferred.t
 (** This provides a guard that can be used to return proper exit
     values to the Async command system. It also does a decent job of
     printing out common error messages *)
+
+
+val dump: dir:String.t -> name:String.t -> contents:String.t
+  -> (Unit.t, Exn.t) Deferred.Result.t
+(** Writes a file with in the indicated path with the given name all at once *)
+
+val log_level: Log.Level.t Command.Spec.Arg_type.t
+(** A command arg that can be used as part of a command spec *)
+
+val flag: Log.Level.t Command.Spec.param
+(** A Command.Spec param that can be used in a Command spec. It binds
+    `-l` and `--log-level` to a var `log_level` *)
+
+val create: Log.Level.t -> Log.t
+(** Create a logger to std out *)
+
+val flush: Log.t -> (Unit.t, Exn.t) Deferred.Result.t
+(** A helper function to help log flushing fit into Deferred.Result *)
