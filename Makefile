@@ -22,7 +22,7 @@ SEMVER = $(shell $(TRV) build semver)
 
 EXTRA_TARGETS := trv.native
 
-PREFIX := /usr
+PREFIX := $(shell dirname $$(dirname $$(which ocamlfind)))
 
 ### Knobs
 PARALLEL_JOBS ?= 2
@@ -86,6 +86,9 @@ install-local-opam: opam pin-repo
 
 prepare: build
 	$(TRV) opam prepare --organization $(ORGANIZATION) --target-dir $(BUILD_DIR) --homepage $(HOMEPAGE) --dev-repo $(DEV_REPO) --lib-dir $(LIB_DIR) --license $(LICENSE) --name $(NAME) --author $(AUTHOR) --maintainer $(AUTHOR) --bug-reports $(BUG_REPORTS) --build-cmd "make" --install-cmd 'make "install" "PREFIX=%{prefix}%"' --remove-cmd 'make "remove" "PREFIX=%{prefix}%"' $(BUILD_MOD_DEPS) $(MOD_DEPS) --description-file '$(DESC_FILE)'
+
+install-extra:
+	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
 
 install-library: metadata
 	cd $(LIB_DIR); ocamlfind install $(NAME) META `find ./  -name "*.cmi" -o -name "*.cmo" -o -name "*.o" -o -name "*.cmx" -o -name "*.cmxa" -o -name "*.cmxs" -o -name "*.a" -o -name "*.cma"`
