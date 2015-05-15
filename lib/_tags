@@ -1,0 +1,12 @@
+true: syntax(camlp4o)
+
+<flib>: include
+<opam>: include
+<build>: include
+<log>: include
+<cmd>: include
+
+<*>: thread, package(core), package(async), package(async_unix)
+<*>: package(async_extra), package(sexplib.syntax), package(sexplib)
+<*>: package(async_shell), package(core_extended), package(async_find)
+<*>: package(cohttp.async), package(uri)
