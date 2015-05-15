@@ -3,6 +3,9 @@ open Async.Std
 
 let name = "build"
 
+let project_root = Build_project_root.find
+let get_semver = Build_semver.get_semver
+
 let command =
   Command.group ~summary:"Project tooling for bootstrapping projects"
     [Build_make_META.desc;
