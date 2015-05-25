@@ -1,6 +1,5 @@
 true: syntax(camlp4o)
 
-<*>: thread, package(core), package(async), package(async_unix), package(uri)
-<*>: package(async_extra), package(sexplib.syntax), package(sexplib)
-<*>: package(async_shell), package(core_extended), package(async_find)
-<*>: package(cohttp.async), package(uri)
+<*>: thread, package(core), package(async), package(sexplib.syntax)
+<*>: package(core_extended), package(uri), package(cohttp.async)
+<*>: package(async_shell)

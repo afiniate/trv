@@ -1,45 +1,68 @@
-NAME:=trv
-LICENSE:="OSI Approved :: Apache Software License v2.0"
-AUTHOR:="Afiniate, Inc."
-ORGANIZATION:="afiniate"
-HOMEPAGE:="https://github.com/afiniate/trv"
+# =============================================================================
+# Build Management Knobs
+# =============================================================================
 
-DEV_REPO:="git@github.com:afiniate/trv.git"
-BUG_REPORTS:="https://github.com/afiniate/trv/issues"
+PARALLEL_JOBS ?= 2
+BUILD_FLAGS ?= -use-ocamlfind -cflags -bin-annot -lflags -g
 
-BUILD_DEPS:=core async async_unix async_extra sexplib.syntax sexplib \
-	async_shell core_extended async_find cohttp.async uri
-DEPS:=$(BUILD_DEPS)
+# =============================================================================
+# Project Description
+# =============================================================================
+
+NAME ?= trv
+LICENSE ?= "OSI Approved :: Apache Software License v2.0"
+AUTHOR ?= "Afiniate, Inc."
+ORGANIZATION += "afiniate"
+HOMEPAGE ?= "https://github.com/afiniate/trv"
+
+DEV_REPO ?= "git@github.com:afiniate/trv.git"
+BUG_REPORTS ?= "https://github.com/afiniate/trv/issues"
+SEMVER ?= $(shell $(TRV) build semver)
+
+# =============================================================================
+# Deps
+# =============================================================================
+
+
+OCAML_DEPS ?= core async core_extended uri cohttp \
+      async_shell async_find
+
+OCAML_FIND_DEPS ?= cohttp.async
+
+OCAML_PKG_DEPS ?= ocaml findlib camlp4
+
+DEPS ?= git
+
+# =============================================================================
+# Layout Description
+# =============================================================================
 
 DESC_FILE := $(CURDIR)/descr
 
 BUILD_DIR := $(CURDIR)/_build
 SOURCE_DIR := lib
 LIB_DIR := $(BUILD_DIR)/$(SOURCE_DIR)
-MLIS:=$(foreach f,$(wildcard $(LIB_DIR)/*.mli),$(notdir $f))
+MLIS := $(foreach f,$(wildcard $(LIB_DIR)/*.mli),$(notdir $f))
 TRV := $(LIB_DIR)/trv.native
-SEMVER = $(shell $(TRV) build semver)
+
+# =============================================================================
+# Variables
+# =============================================================================
 
 EXTRA_TARGETS := trv.native
-
-PREFIX := $(shell dirname $$(dirname $$(which ocamlfind)))
-
-### Knobs
-PARALLEL_JOBS ?= 2
-BUILD_FLAGS ?= -use-ocamlfind -cflags -bin-annot -lflags -g
-
-# =============================================================================
-# Useful Vars
-# =============================================================================
+PREFIX ?= $(shell dirname $$(dirname $$(which ocamlfind)))
 
 BUILD := ocamlbuild -j $(PARALLEL_JOBS) -build-dir $(BUILD_DIR) $(BUILD_FLAGS)
 
-MOD_DEPS=$(foreach DEP,$(DEPS), --depends $(DEP))
-BUILD_MOD_DEPS=$(foreach DEP,$(BUILD_DEPS), --build-depends $(DEP))
+MOD_DEPS = $(foreach DEP,$(OCAML_DEPS), --depends $(DEP)) \
+           $(foreach DEP,$(OCAML_FIND_DEPS), --depends $(DEP))
 
-UTOP_MODS=$(foreach DEP,$(DEPS),\#require \"$(DEP)\";;)
+SHELL_DEPS=$(foreach DEP,$(OCAML_PKG_DEPS), ocamlPackages.$(DEP)) \
+           $(foreach DEP,$(OCAML_DEPS), ocamlPackages.$(DEP)) \
+           $(foreach DEP,$(DEPS), $(DEP))
 
-UTOP_INIT=$(BUILD_DIR)/init.ml
+UTOP_MODS = $(foreach DEP,$(OCAML_DEPS),\#require \"$(DEP)\";;)
+UTOP_INIT = $(BUILD_DIR)/init.ml
 
 ### Test bits
 TESTS_DIR := $(BUILD_DIR)/tests
@@ -80,7 +103,7 @@ opam: build
 	--lib-dir $(LIB_DIR) --license $(LICENSE) --author $(AUTHOR) \
 	--maintainer $(AUTHOR) --bug-reports $(BUG_REPORTS) \
 	--build-cmd "make" --install-cmd 'make "install" "PREFIX=%{prefix}%" \
-	"SEMVER=%{aws_async:version}%"' --remove-cmd 'make "remove" \
+	"SEMVER=%{trv:version}%"' --remove-cmd 'make "remove" \
 	"PREFIX=%{prefix}%"' $(BUILD_MOD_DEPS) $(MOD_DEPS)
 
 unpin-repo:
@@ -103,6 +126,7 @@ prepare: build
 	$(MOD_DEPS) --description-file '$(DESC_FILE)'
 
 install-extra: build
+	mkdir $(PREFIX)/bin
 	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
 
 install-library: metadata
@@ -158,3 +182,6 @@ utop: $(UTOP_INIT)
 		--build-dir $(BUILD_DIR) \
 		--lib "$(DEPS)" \
 		--source-dir $(SOURCE_DIR)
+
+shell:
+	nix-shell -p $(SHELL_DEPS)
