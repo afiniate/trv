@@ -16,6 +16,14 @@ let makefile = "# You can control some aspects of the build with next variables 
 # * BUILD_FLAGS flags used to compile non production ocaml code (e.g tools,
 # tests ...)
 # * BUILD_PROD_FLAGS flags used to compile production ocaml code
+# * OCAML_DEPS signals ocamlPackages dependencies, like core, async, cohttp, etc
+# * OCAML_PKG_DEPS signals ocamlPackages global dependencies, like ocaml, findlib or camlp4
+# * OCAML_FIND_DEPS signals '#require' instructions for utop, like cohttp.async
+# * DEPS signals other package dependencies (base Nix names), like trv, vrt, git etc
+#
+# If you need an extra step in local installation besides copying the compiled
+# artifacts to your local opam, like copying a binary as well, you can define a
+# 'install_extra' goal.
 #
 # =============================================================================
 # VARS
@@ -24,7 +32,7 @@ BUILD_DIR := $(CURDIR)/_build
 SOURCE_DIR := lib
 LIB_DIR := $(BUILD_DIR)/$(SOURCE_DIR)
 
-PREFIX := /usr
+PREFIX ?= $(shell dirname $$(dirname $$(which ocamlfind)))
 
 ### Knobs
 PARALLEL_JOBS ?= 2
@@ -36,11 +44,14 @@ BUILD_FLAGS ?= -use-ocamlfind -cflags -bin-annot -lflags -g
 SEMVER := $(shell trv build semver)
 BUILD := ocamlbuild -j $(PARALLEL_JOBS) -build-dir $(BUILD_DIR) $(BUILD_FLAGS)
 
-MOD_DEPS=$(foreach DEP,$(DEPS), --depends $(DEP))
-BUILD_MOD_DEPS=$(foreach DEP,$(BUILD_DEPS), --build-depends $(DEP))
+MOD_DEPS = $(foreach DEP,$(OCAML_DEPS), --depends $(DEP)) \
+           $(foreach DEP,$(OCAML_FIND_DEPS), --depends $(DEP))
 
-UTOP_MODS=$(foreach DEP,$(DEPS),\\#require \\\"$(DEP)\\\";;)
+SANDBOX_DEPS=$(foreach DEP,$(OCAML_PKG_DEPS), ocamlPackages.$(DEP)) \
+             $(foreach DEP,$(OCAML_DEPS), ocamlPackages.$(DEP)) \
+             $(foreach DEP,$(DEPS), $(DEP))
 
+UTOP_MODS=$(foreach DEP,$(OCAML_DEPS),\\#require \\\"$(DEP)\\\";;)
 UTOP_INIT=$(BUILD_DIR)/init.ml
 
 ### Test bits
@@ -152,7 +163,6 @@ clean:
 \trm -rf $(BUILD_DIR)
 \trm -rf trv.mk
 
-
 # =============================================================================
 # Rules for testing
 # =============================================================================
@@ -172,7 +182,6 @@ unit-test: $(filter %_unit_tests_run, $(TEST_RUN_TARGETS))
 
 integ-test: $(filter %_integ_tests_run, $(TEST_RUN_TARGETS))
 
-
 # =============================================================================
 # Support
 # =============================================================================
@@ -188,8 +197,11 @@ utop: $(UTOP_INIT)
 .merlin: build
 \ttrv build make-dot-merlin \\
 \t\t--build-dir $(BUILD_DIR) \\
-\t\t--lib \"$(DEPS)\" \\
+\t\t--lib \"$(OCAML_DEPS)\" \\
 \t\t--source-dir $(SOURCE_DIR)
+
+sandbox:
+\tnix-shell -p $(SANDBOX_DEPS)
 "
 
 
