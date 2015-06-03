@@ -126,7 +126,7 @@ prepare: build
 	$(MOD_DEPS) --description-file '$(DESC_FILE)'
 
 install-extra: build
-	mkdir $(PREFIX)/bin
+	mkdir -p $(PREFIX)/bin
 	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
 
 install-library: metadata
