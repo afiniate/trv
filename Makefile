@@ -107,10 +107,10 @@ opam: build
 	"PREFIX=%{prefix}%"' $(BUILD_MOD_DEPS) $(MOD_DEPS)
 
 unpin-repo:
-	opam pin remove -y $(NAME)
+	opam pin --color=never remove -y $(NAME)
 
 pin-repo:
-	opam pin add -y $(NAME) $(CURDIR)
+	opam pin --color=never add -y $(NAME) $(CURDIR)
 
 install-local-opam: opam pin-repo
 	opam remove $(NAME); opam install $(NAME)
@@ -126,7 +126,7 @@ prepare: build
 	$(MOD_DEPS) --description-file '$(DESC_FILE)'
 
 install-extra: build
-	mkdir $(PREFIX)/bin
+	mkdir -p $(PREFIX)/bin
 	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
 
 install-library: metadata
