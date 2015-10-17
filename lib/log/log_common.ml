@@ -17,7 +17,7 @@ let flag =
                   ~doc:"log-level The log level to set")
 
 let create log_level =
-  Log.create log_level [Log.Output.stdout ()]
+  Log.create ~level:log_level ~output:[Log.Output.stdout ()]
 
 let flush logger =
   Log.flushed logger

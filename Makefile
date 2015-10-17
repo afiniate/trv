@@ -107,10 +107,10 @@ opam: build
 	"PREFIX=%{prefix}%"' $(BUILD_MOD_DEPS) $(MOD_DEPS)
 
 unpin-repo:
-	opam pin remove -y $(NAME)
+	opam pin --color=never remove -y $(NAME)
 
 pin-repo:
-	opam pin add -y $(NAME) $(CURDIR)
+	opam pin --color=never add -y $(NAME) $(CURDIR)
 
 install-local-opam: opam pin-repo
 	opam remove $(NAME); opam install $(NAME)
