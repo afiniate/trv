@@ -31,7 +31,7 @@ OCAML_FIND_DEPS ?= cohttp.async
 
 OCAML_PKG_DEPS ?= ocaml findlib camlp4
 
-DEPS ?= git
+DEPS ?= git bash
 
 # =============================================================================
 # Layout Description

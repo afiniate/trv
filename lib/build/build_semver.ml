@@ -7,13 +7,12 @@ exception Semver_version_parse_failure of String.t
 exception Semver_git_describe_parse_failure of String.t
 
 let create_with_commit_count ref =
-  Async_shell.sh_one
-    "git rev-list HEAD --count"
+  Cmd_common.sh_one "git rev-list HEAD --count" 
   >>| function
-  | Some count ->
+  | Ok count ->
     Ok ("0.0.0" ^ "+build." ^ count ^ "." ^ ref)
-  | None ->
-    Error (Semver_commit_count_failure"nothing")
+  | Error _ ->
+    Error (Semver_commit_count_failure "nothing")
 
 let deep_parse potential_ver =
   return (let open Or_error.Monad_infix in
@@ -35,13 +34,23 @@ let parse_ver potential_ver top =
     return @@ Error (Semver_version_parse_failure potential_ver)
 
 let split_version = function
-  | Some ver ->
+  | Ok ver ->
     return (let open Or_error.Monad_infix in
             Re2.create "-"
             >>| fun re ->
             Re2.split re ver)
   | _ ->
     return @@ Or_error.error_string "No version returned"
+
+let render_parse_failure
+  : (String.t, Exn.t) Result.t -> (String.t, Exn.t) Deferred.Result.t =
+  function
+  | Ok ver ->
+    return @@ Error (Semver_git_describe_parse_failure ver)
+  | Error (Cmd_common.Execution_failed err) ->
+   return @@ Error (Semver_git_describe_parse_failure (Error.to_string_hum err))
+  | Error err ->
+    return @@ Error (Semver_git_describe_parse_failure (Exn.to_string err))
 
 let parse ver =
   split_version ver
@@ -53,14 +62,11 @@ let parse ver =
     >>|? fun ver ->
     ver ^ "+build." ^ count ^ "." ^ gitref
   | _ ->
-    (match ver with
-     | Some ver ->
-       return @@ Error (Semver_git_describe_parse_failure ver)
-     | None ->
-       return @@ Error (Semver_git_describe_parse_failure "none"))
+    render_parse_failure ver
+
 
 let get_semver () =
-  Async_shell.sh_one "git describe --tags --always"
+  Cmd_common.sh_one "git describe --tags --always"
   >>= fun str_opt ->
   parse str_opt
 
