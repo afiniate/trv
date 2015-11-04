@@ -44,13 +44,13 @@ BUILD_DIR := $(CURDIR)/_build
 SOURCE_DIR := lib
 LIB_DIR := $(BUILD_DIR)/$(SOURCE_DIR)
 MLIS := $(foreach f,$(wildcard $(LIB_DIR)/*.mli),$(notdir $f))
-TRV := $(LIB_DIR)/trv.native
+TRV := $(LIB_DIR)/trv_main.native
 
 # =============================================================================
 # Variables
 # =============================================================================
 
-EXTRA_TARGETS := trv.native
+EXTRA_TARGETS := trv_main.native
 PREFIX ?= $(shell dirname $$(dirname $$(which ocamlfind)))
 
 BUILD := ocamlbuild -j $(PARALLEL_JOBS) -build-dir $(BUILD_DIR) $(BUILD_FLAGS)
@@ -129,7 +129,7 @@ prepare: build
 
 install-extra: build
 	mkdir -p $(PREFIX)/bin
-	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
+	cp $(TRV) $(PREFIX)/bin/trv
 
 install-library: metadata
 	cd $(LIB_DIR); ocamlfind install $(NAME) META `find ./  -name "*.cmi" \
