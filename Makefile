@@ -38,6 +38,7 @@ DEPS ?= git bash
 # =============================================================================
 
 DESC_FILE := $(CURDIR)/descr
+DESC := $(shell cat $(DESC_FILE))
 
 BUILD_DIR := $(CURDIR)/_build
 SOURCE_DIR := lib
@@ -91,10 +92,11 @@ build:
 	$(BUILD) $(NAME).cma $(NAME).cmx $(NAME).cmxa $(NAME).a $(NAME).cmxs \$(EXTRA_TARGETS)
 
 metadata: build
-	$(TRV) build make-meta --name $(NAME) --target-dir $(LIB_DIR) \
-	--root-file Makefile --semver $(SEMVER) --description-file \
-	'$(DESC_FILE)' $(MOD_DEPS)
-
+	@sed s/@@SEMVER@@/$(SEMVER)/g $(CURDIR)/$(SOURCE_DIR)/META.template \
+	| sed s/@@DEPS@@/"$(OCAML_DEPS) $(OCAML_FIND_DEPS)"/g \
+	| sed s/@@DESC@@/"$(DESC)"/g \
+	| sed s/@@NAME@@/"$(NAME)"/g > $(LIB_DIR)/META
+    
 # This is only used to help during local opam package
 # development
 opam: build

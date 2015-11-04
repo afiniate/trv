@@ -1,0 +1,8 @@
+version = "@@SEMVER@@"
+description = "@@DESC@@"
+
+requires = "@@DEPS@@"
+archive(byte) = "@@NAME@@.cma"
+archive(byte, plugin) = "@@NAME@@.cma"
+archive(native) = "@@NAME@@.cmxa"
+archive(native, plugin) = "@@NAME@@.cmxs" exists_if = "@@NAME@@.cma"
