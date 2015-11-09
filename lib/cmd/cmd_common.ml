@@ -3,6 +3,11 @@ open Core_extended.Std
 open Async.Std
 open Deferred.Monad_infix
 
+exception Execution_failed of Error.t
+
+type shell_desc = { prog: String.t;
+                    args: String.t List.t } with sexp
+
 let guard fn =
   Monitor.try_with
     fn
@@ -31,23 +36,61 @@ let result_guard def_fn =
       | Error exn ->
         raise exn)
 
-let simply_print_response ~exn format =
-  (Async_shell.sh_one format)
-  >>= function
-  | Some result ->
-    print_string result;
-    return @@ Ok ()
-  | None ->
-    return @@ Error exn
+let get_cwd
+  : String.t Option.t -> String.t Deferred.t =
+  function
+  | Some cwd -> return cwd
+  | None -> Sys.getcwd ()
 
-let cmd_monitor ~exn format () =
-  result_guard (fun _ -> simply_print_response ~exn format)
+let sh
+  : ?working_dir:String.t -> ?shell:shell_desc -> String.t ->
+    (String.t, Exn.t) Deferred.Result.t =
+  fun ?working_dir ?(shell = {prog="bash"; args=["-c"]}) cmd ->
+    get_cwd working_dir
+    >>= fun cwd ->
+    let actual_args = List.concat [shell.args; [cmd]] in
+    Process.run ~working_dir:cwd ~prog:shell.prog ~args:actual_args ()
+    >>= function
+    | Ok result -> 
+      return @@ Ok result
+    | Error err ->
+      return @@ Error (Execution_failed err)
 
-let cmd_simply_print_response ~name ~desc ~exn format =
+let sh_one
+  : ?working_dir:String.t -> ?shell:shell_desc -> String.t ->
+    (String.t, Exn.t) Deferred.Result.t =
+  fun ?working_dir ?shell cmd ->
+    let split result = String.split ~on:'\n' result
+                       |> function 
+                       | h::_ -> return @@ Ok h
+                       | [] -> return @@ Ok "" in
+
+    let open Deferred.Result.Monad_infix in
+    sh ?working_dir ?shell cmd
+    >>= split
+
+let simply_print_response 
+  : ?working_dir:String.t -> ?shell:shell_desc -> String.t ->
+    (Unit.t, Exn.t) Deferred.Result.t =
+  fun ?working_dir ?shell cmd ->
+    sh ?working_dir ?shell cmd
+    >>= function
+    | Ok result -> 
+      print_string result;
+      return @@ Ok ()
+    | Error (Execution_failed err) -> 
+      print_string @@ Error.to_string_hum err;
+      return @@ Error (Execution_failed err)
+    | Error err -> 
+      print_string @@  Exn.to_string_hum err;
+      return @@ Error err
+
+
+let cmd_simply_print_response ~name ~desc ?working_dir ?shell cmd =
   let command =
     Command.async_basic ~summary:desc
       Command.Spec.empty
-      (cmd_monitor ~exn format) in
+      (fun () -> 
+         result_guard 
+           (fun () -> simply_print_response ?working_dir ?shell cmd )) in
   (name, command)
-
-

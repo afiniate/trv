@@ -31,25 +31,26 @@ OCAML_FIND_DEPS ?= cohttp.async
 
 OCAML_PKG_DEPS ?= ocaml findlib camlp4
 
-DEPS ?= git
+DEPS ?= git bash
 
 # =============================================================================
 # Layout Description
 # =============================================================================
 
 DESC_FILE := $(CURDIR)/descr
+DESC := $(shell cat $(DESC_FILE))
 
 BUILD_DIR := $(CURDIR)/_build
 SOURCE_DIR := lib
 LIB_DIR := $(BUILD_DIR)/$(SOURCE_DIR)
 MLIS := $(foreach f,$(wildcard $(LIB_DIR)/*.mli),$(notdir $f))
-TRV := $(LIB_DIR)/trv.native
+TRV := $(LIB_DIR)/trv_main.native
 
 # =============================================================================
 # Variables
 # =============================================================================
 
-EXTRA_TARGETS := trv.native
+EXTRA_TARGETS := trv_main.native
 PREFIX ?= $(shell dirname $$(dirname $$(which ocamlfind)))
 
 BUILD := ocamlbuild -j $(PARALLEL_JOBS) -build-dir $(BUILD_DIR) $(BUILD_FLAGS)
@@ -91,10 +92,11 @@ build:
 	$(BUILD) $(NAME).cma $(NAME).cmx $(NAME).cmxa $(NAME).a $(NAME).cmxs \$(EXTRA_TARGETS)
 
 metadata: build
-	$(TRV) build make-meta --name $(NAME) --target-dir $(LIB_DIR) \
-	--root-file Makefile --semver $(SEMVER) --description-file \
-	'$(DESC_FILE)' $(MOD_DEPS)
-
+	@sed s/@@SEMVER@@/$(SEMVER)/g $(CURDIR)/$(SOURCE_DIR)/META.template \
+	| sed s/@@DEPS@@/"$(OCAML_DEPS) $(OCAML_FIND_DEPS)"/g \
+	| sed s/@@DESC@@/"$(DESC)"/g \
+	| sed s/@@NAME@@/"$(NAME)"/g > $(LIB_DIR)/META
+    
 # This is only used to help during local opam package
 # development
 opam: build
@@ -127,7 +129,7 @@ prepare: build
 
 install-extra: build
 	mkdir -p $(PREFIX)/bin
-	cp $(BUILD_DIR)/lib/trv.native $(PREFIX)/bin/trv
+	cp $(TRV) $(PREFIX)/bin/trv
 
 install-library: metadata
 	cd $(LIB_DIR); ocamlfind install $(NAME) META `find ./  -name "*.cmi" \
